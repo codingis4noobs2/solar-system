@@ -33,11 +33,10 @@ jobs:
 
         - name: Unit Testing
           id: nodejs-unit-testing-step
-          #continue-on-error: true
           run: npm test
 
         - name: Archive Test Results
-          if: failure() && (steps.nodejs-unit-testing-step.outcome == 'failure' || steps.nodejs-unit-testing-step.outcome == 'success')
+          if: always()
           uses: actions/upload-artifact@v7
           with:
             name: Mocha Test Result
