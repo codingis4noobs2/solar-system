@@ -84,6 +84,7 @@ jobs:
         needs: [unit-testing, code_coverage]
         permissions: 
             packages: write
+            contents: read
         runs-on: ubuntu-latest
         steps:
         - name: Checkout Repo
