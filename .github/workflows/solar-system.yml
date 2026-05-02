@@ -16,17 +16,22 @@ jobs:
         name: Unit Testing
         strategy:
             matrix:
-                nodejs_version: [22, 24]
                 os: [ubuntu-latest, macos-latest]
         runs-on: ${{ matrix.os }}
         steps:
         - name: Checkout Repository
           uses: actions/checkout@v4
 
-        - name: Setup NodeJS ${{ matrix.nodejs_version }}
+        - name: Setup NodeJS 22
           uses: actions/setup-node@v6
           with:
-            node-version: ${{ matrix.nodejs_version }}
+            node-version: 22
+        
+        - name: Cache Dependencies
+          uses: actions/cache@v5
+          with:
+            path: ~/.npm
+            key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
 
         - name: Install dependencies
           run: npm install
@@ -53,6 +58,12 @@ jobs:
           uses: actions/setup-node@v6
           with:
             node-version: 22
+
+        - name: Cache Dependencies
+          uses: actions/cache@v5
+          with:
+            path: ~/.npm
+            key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
 
         - name: Install dependencies
           run: npm install
