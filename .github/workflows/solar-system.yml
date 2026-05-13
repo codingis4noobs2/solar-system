@@ -261,12 +261,15 @@ jobs:
             echo "Testing: $HOST"
 
             curl --fail \
-              --silent \
-              --show-error \
-              --connect-timeout 5 \
-              --max-time 20 \
-              http://$HOST/live
-                  
+            --retry 10 \
+            --retry-delay 5 \
+            --retry-all-errors \
+            --silent \
+            --show-error \
+            --connect-timeout 5 \
+            --max-time 20 \
+            http://$HOST/live
+
     # integration-testing:
     #     name: Dev Integration testing
     #     needs: dev_deploy
