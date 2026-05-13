@@ -223,7 +223,7 @@ jobs:
         - name: Set App ingress host url
           id: set-ingress-host-address
           run: |
-            echo "APP_INGRESS_HOST=$(minikube ip)" >> $GITHUB_ENV
+            echo "APP_INGRESS_HOST=$(minikube ip)" >> $GITHUB_OUTPUT
 
     integration-testing:
         name: Dev Integration testing
