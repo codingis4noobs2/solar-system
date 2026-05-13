@@ -239,7 +239,7 @@ jobs:
                 --connect-timeout 5 \
                 --max-time 20 \
                 -H "Host: solar-system.com" \
-                http://$(minikube ip)/live
+                http://$(minikube ip):3000/live
         
     # integration-testing:
     #     name: Dev Integration testing
