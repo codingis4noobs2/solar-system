@@ -151,95 +151,121 @@ jobs:
 
         - name: Install kubectl CLI
           uses: azure/setup-kubectl@v3
-          with: 
+          with:
             version: 'v1.26.0'
-        
-        - name: start minikube
+
+        - name: Start Minikube
           id: minikube
           uses: medyagh/setup-minikube@latest
 
-        - name: Fetch kubernetes cluster details
+        - name: Show cluster info
           run: |
-            kubectl version
-            echo ---------------------
             kubectl get nodes
+            kubectl cluster-info
 
         - name: Enable Ingress
           run: |
             minikube addons enable ingress
 
-        - name: Wait for ingress controller
+        - name: Wait for Ingress controller
           run: |
             kubectl wait \
               --namespace ingress-nginx \
               --for=condition=ready pod \
               --selector=app.kubernetes.io/component=controller \
               --timeout=180s
-        
-        - name: Debug ingress
-          run: |
-            kubectl get pods -n ingress-nginx
-            kubectl get svc -n ingress-nginx
-            kubectl get endpoints -n ingress-nginx
 
-        - name: Save nginx ingress controller IP as github env
+        - name: Set INGRESS_IP
           run: |
             echo "INGRESS_IP=$(minikube ip)" >> $GITHUB_ENV
 
-        - name: Replace token in manifest files
+        - name: Replace tokens in manifests
           uses: cschleiden/replace-tokens@v1
           with:
             tokenPrefix: '${'
             tokenSuffix: '}'
             files: '["kubernetes/development/*.yaml"]'
           env:
-            NAMESPACE: ${{vars.NAMESPACE}}
-            REPLICAS: ${{vars.REPLICAS}}
+            NAMESPACE: ${{ vars.NAMESPACE }}
+            REPLICAS: ${{ vars.REPLICAS }}
             K8S_IMAGE: ${{ vars.DOCKERHUB_USERNAME }}/solar-system:${{ github.sha }}
-            INGRESS_IP: ${{env.INGRESS_IP}}
+            INGRESS_IP: ${{ env.INGRESS_IP }}
 
-        - name: Check files
+        - name: Show rendered manifests
           run: |
             cat kubernetes/development/*.yaml
 
         - name: Create namespace
           run: |
-           kubectl create namespace development
+            kubectl create namespace development || true
 
         - name: Create MongoDB secret
           run: |
-            kubectl -n ${{vars.NAMESPACE}} create secret generic mongo-db-creds \
-            --from-literal=MONGO_URI=${{env.MONGO_URI}} \
-            --from-literal=MONGO_USERNAME=${{env.MONGO_USERNAME}} \
-            --from-literal=MONGO_PAsSWORD=${{secrets.MONGO_PASSWORD}} \
-            --save-config \
-            --dry-run=client \
-            -o yaml | kubectl apply -f -
+            kubectl -n development create secret generic mongo-db-creds \
+              --from-literal=MONGO_URI=${{ env.MONGO_URI }} \
+              --from-literal=MONGO_USERNAME=${{ env.MONGO_USERNAME }} \
+              --from-literal=MONGO_PASSWORD=${{ secrets.MONGO_PASSWORD }} \
+              --dry-run=client -o yaml | kubectl apply -f -
 
-        - name: Deploy to Dev Env
+        - name: Deploy manifests
           run: |
             kubectl apply -f kubernetes/development
-        
+
         # - name: Set App ingress host url
         #   id: set-ingress-host-address
         #   run: |
         #     echo "APP_INGRESS_HOST=$(minikube ip)" >> $GITHUB_OUTPUT
 
-        - name: Wait for deployment
+        - name: Wait for rollout
           run: |
             kubectl rollout status deployment/solar-system \
-            -n development \
-            --timeout=180s
+              -n development \
+              --timeout=180s
 
-        - name: Testing deployment
+        - name: VERIFY SERVICE + ENDPOINTS
           run: |
+            echo "=== PODS ==="
+            kubectl get pods -n development -o wide
+
+            echo "=== SERVICE ==="
+            kubectl get svc -n development
+
+            echo "=== ENDPOINTS ==="
+            kubectl get endpoints -n development
+
+            echo "=== INGRESS ==="
+            kubectl get ingress -n development
+
+        - name: Wait for endpoints to be ready
+          run: |
+            for i in {1..20}; do
+              EP=$(kubectl get endpoints solar-system -n development -o jsonpath='{.subsets[*].addresses[*].ip}')
+              echo "Endpoints: $EP"
+
+              if [ ! -z "$EP" ]; then
+                echo "Endpoints ready"
+                exit 0
+              fi
+
+              sleep 3
+            done
+
+            echo "ERROR: No endpoints found"
+            exit 1
+
+        - name: Integration test (FINAL)
+          run: |
+            HOST="solar-system-development.$(minikube ip).nip.io"
+
+            echo "Testing: $HOST"
+
             curl --fail \
-            --silent \
-            --show-error \
-            --connect-timeout 5 \
-            --max-time 20 \
-            http://solar-system-development.$(minikube ip).nip.io/live
-        
+              --silent \
+              --show-error \
+              --connect-timeout 5 \
+              --max-time 20 \
+              http://$HOST/live        
+    
     # integration-testing:
     #     name: Dev Integration testing
     #     needs: dev_deploy
