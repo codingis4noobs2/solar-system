@@ -238,8 +238,7 @@ jobs:
             --show-error \
             --connect-timeout 5 \
             --max-time 20 \
-            -H "Host: solar-system-development.$(minikube ip).nip.io" \
-            http://$(minikube ip)/live
+            http://solar-system-development.$(minikube ip).nip.io/live
         
     # integration-testing:
     #     name: Dev Integration testing

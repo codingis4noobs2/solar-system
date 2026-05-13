@@ -18,7 +18,3 @@ spec:
                 number: 3000
           path: /
           pathType: Prefix
-    tls:
-    - hosts:
-      - solar-system-${NAMESPACE}.${INGRESS_IP}.nip.io
-      secretName: ingress-local-tls
