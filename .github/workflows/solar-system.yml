@@ -223,7 +223,7 @@ jobs:
         - name: Set App ingress host url
           id: set-ingress-host-address
           run: |
-            echo "APP_INGRESS_HOST=$(kubectl -n ${{ vars.NAMESPACE }} get ingress -o jsonpath='{.items[0].spec.tls[0].host[0]}')"
+            echo "APP_INGRESS_HOST=$(minikube ip)"
 
     integration-testing:
         name: Dev Integration testing
