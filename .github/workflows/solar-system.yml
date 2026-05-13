@@ -162,6 +162,10 @@ jobs:
             echo ---------------------
             kubectl get nodes
 
+        - name: Enable Ingress
+          run: |
+            minikube addons enable ingress
+
         - name: Save nginx ingress controller IP as github env
           run: |
             echo "INGRESS_IP=$(kubectl -n ingress-nginx get services ingress-nginx-controller -o jsonpath="{.status.loadBalancer.ingress[0].ip}")" >> $GITHUB_ENV
