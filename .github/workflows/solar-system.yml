@@ -234,12 +234,12 @@ jobs:
         - name: Testing deployment
           run: |
             curl --fail \
-                --silent \
-                --show-error \
-                --connect-timeout 5 \
-                --max-time 20 \
-                -H "Host: solar-system.com" \
-                http://$(minikube ip):3000/live
+            --silent \
+            --show-error \
+            --connect-timeout 5 \
+            --max-time 20 \
+            -H "Host: solar-system-development.$(minikube ip).nip.io" \
+            http://$(minikube ip)/live
         
     # integration-testing:
     #     name: Dev Integration testing
