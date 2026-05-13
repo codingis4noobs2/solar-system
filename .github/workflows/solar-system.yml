@@ -255,16 +255,13 @@ jobs:
 
         - name: Integration test (FINAL)
           run: |
-            HOST="solar-system-development.$(minikube ip).nip.io"
-
             echo "Testing: $HOST"
-
             curl --fail \
               --silent \
               --show-error \
               --connect-timeout 5 \
               --max-time 20 \
-              http://$HOST/live        
+              http://solar-system-development.$(minikube ip).nip.io/live        
     
     # integration-testing:
     #     name: Dev Integration testing
