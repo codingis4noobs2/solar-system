@@ -143,8 +143,8 @@ jobs:
     dev_deploy:
       needs: docker
       runs-on: ubuntu-latest
-      outputs: 
-        APP_INGRESS_URL: ${{ steps.set-ingress-host-address.outputs.APP_INGRESS_HOST }}
+      # outputs: 
+      #   APP_INGRESS_URL: ${{ steps.set-ingress-host-address.outputs.APP_INGRESS_HOST }}
       steps:
         - name: Checkout Repo
           uses: actions/checkout@v4
@@ -220,20 +220,29 @@ jobs:
           run: |
             kubectl apply -f kubernetes/development
         
-        - name: Set App ingress host url
-          id: set-ingress-host-address
-          run: |
-            echo "APP_INGRESS_HOST=$(minikube ip)" >> $GITHUB_OUTPUT
+        # - name: Set App ingress host url
+        #   id: set-ingress-host-address
+        #   run: |
+        #     echo "APP_INGRESS_HOST=$(minikube ip)" >> $GITHUB_OUTPUT
 
-    integration-testing:
-        name: Dev Integration testing
-        needs: dev_deploy
-        runs-on: ubuntu-latest
-        steps:
-          - name: Test URL Output using curl and JQ
-            env:
-              URL: ${{ needs.dev_deploy.outputs.APP_INGRESS_URL }}
-            run: |
-              echo $URL
-              echo --------------------------------
-              curl http://$URL/live -s -k | jq -r .status | grep -i live
+        - name: Integration Test
+          run: |
+            curl --fail \
+                --silent \
+                --show-error \
+                --connect-timeout 5 \
+                --max-time 20 \
+                http://$(minikube ip)/live
+        
+    # integration-testing:
+    #     name: Dev Integration testing
+    #     needs: dev_deploy
+    #     runs-on: ubuntu-latest
+    #     steps:
+    #       - name: Test URL Output using curl and JQ
+    #         env:
+    #           URL: ${{ needs.dev_deploy.outputs.APP_INGRESS_URL }}
+    #         run: |
+    #           echo $URL
+    #           echo --------------------------------
+    #           curl http://$URL/live -s -k | jq -r .status | grep -i live
