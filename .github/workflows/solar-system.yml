@@ -173,6 +173,12 @@ jobs:
               --for=condition=ready pod \
               --selector=app.kubernetes.io/component=controller \
               --timeout=180s
+        
+        - name: Debug ingress
+          run: |
+            kubectl get pods -n ingress-nginx
+            kubectl get svc -n ingress-nginx
+            kubectl get endpoints -n ingress-nginx
 
         - name: Save nginx ingress controller IP as github env
           run: |
