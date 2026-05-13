@@ -170,6 +170,10 @@ jobs:
           run: |
             echo "INGRESS_IP=$(minikube ip)" >> $GITHUB_ENV
 
+        - name: Debug step
+          run: |
+            kubectl get pods -n ingress-nginx
+
         - name: Replace token in manifest files
           uses: cschleiden/replace-tokens@v1
           with:
