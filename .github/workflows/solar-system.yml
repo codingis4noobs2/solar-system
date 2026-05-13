@@ -238,6 +238,7 @@ jobs:
                 --show-error \
                 --connect-timeout 5 \
                 --max-time 20 \
+                -H "Host: solar-system.com" \
                 http://$(minikube ip)/live
         
     # integration-testing:
