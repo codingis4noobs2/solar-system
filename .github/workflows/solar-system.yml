@@ -25,7 +25,7 @@ jobs:
             node-version: 22
         
         - name: Install and cache dependencies
-          uses: ./.github/custom-action/npm-action/action.yml
+          uses: ./.github/custom-action/npm-action
           with:
             path-to-folder: node_modules
 
@@ -61,7 +61,7 @@ jobs:
           uses: actions/checkout@v4
 
         - name: Install and cache dependencies
-          uses: ./.github/custom-action/npm-action/action.yml
+          uses: ./.github/custom-action/npm-action
           with:
             path-to-foldere: node_modules
 
