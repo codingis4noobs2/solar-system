@@ -1,6 +1,15 @@
 name: Deployment - Reusable Workflow
 on:
   workflow_call:
+    inputs:
+      mongodb-uri:
+        required: true
+        type: string
+      kubectl-version:
+        description: Provide the kubectl version
+        default: v1.27.0
+        required: false
+        type: string
     secrets:
       mongo-password:
         required: true
@@ -16,7 +25,7 @@ jobs:
     - name: Install kubectl CLI
       uses: azure/setup-kubectl@v3
       with:
-        version: 'v1.26.0'
+        version: ${{ inputs.kubectl-version }}
 
     - name: Start Minikube
       id: minikube
@@ -66,8 +75,8 @@ jobs:
     - name: Create MongoDB secret
       run: |
         kubectl -n development create secret generic mongo-db-creds \
-        --from-literal=MONGO_URI=${{ env.MONGO_URI }} \
-        --from-literal=MONGO_USERNAME=${{ env.MONGO_USERNAME }} \
+        --from-literal=MONGO_URI=${{ inputs.MONGO_URI }} \
+        --from-literal=MONGO_USERNAME=${{ vars.MONGO_USERNAME }} \
         --from-literal=MONGO_PASSWORD=${{ secrets.MONGO_PASSWORD }} \
         --dry-run=client -o yaml | kubectl apply -f -
 
