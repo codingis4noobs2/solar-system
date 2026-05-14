@@ -141,134 +141,14 @@ jobs:
                 ghcr.io/${{ github.repository_owner }}/solar-system:${{ github.sha }}
 
     dev_deploy:
+      if: contains(github.ref, 'feature/')
       needs: docker
-      runs-on: ubuntu-latest
       # outputs: 
       #   APP_INGRESS_URL: ${{ steps.set-ingress-host-address.outputs.APP_INGRESS_HOST }}
-      steps:
-        - name: Checkout Repo
-          uses: actions/checkout@v4
+      secrets:
+        mongo-password: ${{ secrets.MONGO_PASSWORD }}
+      uses: ./.github/workflows/reusable-workflow.yml
 
-        - name: Install kubectl CLI
-          uses: azure/setup-kubectl@v3
-          with:
-            version: 'v1.26.0'
-
-        - name: Start Minikube
-          id: minikube
-          uses: medyagh/setup-minikube@latest
-
-        - name: Show cluster info
-          run: |
-            kubectl get nodes
-            kubectl cluster-info
-
-        - name: Enable Ingress
-          run: |
-            minikube addons enable ingress
-
-        - name: Wait for Ingress controller
-          run: |
-            kubectl wait \
-              --namespace ingress-nginx \
-              --for=condition=ready pod \
-              --selector=app.kubernetes.io/component=controller \
-              --timeout=180s
-
-        - name: Set INGRESS_IP
-          run: |
-            echo "INGRESS_IP=$(minikube ip)" >> $GITHUB_ENV
-
-        - name: Replace tokens in manifests
-          uses: cschleiden/replace-tokens@v1
-          with:
-            tokenPrefix: '${'
-            tokenSuffix: '}'
-            files: '["kubernetes/development/*.yaml"]'
-          env:
-            NAMESPACE: ${{ vars.NAMESPACE }}
-            REPLICAS: ${{ vars.REPLICAS }}
-            K8S_IMAGE: ${{ vars.DOCKERHUB_USERNAME }}/solar-system:${{ github.sha }}
-            INGRESS_IP: ${{ env.INGRESS_IP }}
-
-        - name: Show rendered manifests
-          run: |
-            cat kubernetes/development/*.yaml
-
-        - name: Create namespace
-          run: |
-            kubectl create namespace development || true
-
-        - name: Create MongoDB secret
-          run: |
-            kubectl -n development create secret generic mongo-db-creds \
-              --from-literal=MONGO_URI=${{ env.MONGO_URI }} \
-              --from-literal=MONGO_USERNAME=${{ env.MONGO_USERNAME }} \
-              --from-literal=MONGO_PASSWORD=${{ secrets.MONGO_PASSWORD }} \
-              --dry-run=client -o yaml | kubectl apply -f -
-
-        - name: Deploy manifests
-          run: |
-            kubectl apply -f kubernetes/development
-
-        # - name: Set App ingress host url
-        #   id: set-ingress-host-address
-        #   run: |
-        #     echo "APP_INGRESS_HOST=$(minikube ip)" >> $GITHUB_OUTPUT
-
-        - name: Wait for rollout
-          run: |
-            kubectl rollout status deployment/solar-system \
-              -n development \
-              --timeout=180s
-
-        - name: VERIFY SERVICE + ENDPOINTS
-          run: |
-            echo "=== PODS ==="
-            kubectl get pods -n development -o wide
-
-            echo "=== SERVICE ==="
-            kubectl get svc -n development
-
-            echo "=== ENDPOINTS ==="
-            kubectl get endpoints -n development
-
-            echo "=== INGRESS ==="
-            kubectl get ingress -n development
-
-        - name: Wait for endpoints to be ready
-          run: |
-            for i in {1..20}; do
-              EP=$(kubectl get endpoints solar-system -n development -o jsonpath='{.subsets[*].addresses[*].ip}')
-              echo "Endpoints: $EP"
-
-              if [ ! -z "$EP" ]; then
-                echo "Endpoints ready"
-                exit 0
-              fi
-
-              sleep 3
-            done
-
-            echo "ERROR: No endpoints found"
-            exit 1
-
-        - name: Integration test (FINAL)
-          run: |
-            MINIKUBE_IP=$(minikube ip)
-            HOST="solar-system-development.${MINIKUBE_IP}.nip.io"
-
-            echo "Testing: $HOST"
-
-            curl --fail \
-            --retry 10 \
-            --retry-delay 5 \
-            --retry-all-errors \
-            --silent \
-            --show-error \
-            --connect-timeout 5 \
-            --max-time 20 \
-            http://$HOST/live
 
     # integration-testing:
     #     name: Dev Integration testing
